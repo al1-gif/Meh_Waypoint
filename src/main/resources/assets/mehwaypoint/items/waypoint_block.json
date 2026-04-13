@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "mehwaypoint:item/waypoint_block"
+  }
+}

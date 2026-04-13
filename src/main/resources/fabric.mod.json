@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "mehwaypoint",
+	"version": "${version}",
+	"name": "Meh Waypoint",
+	"description": "Cool teleport waypoint that lets you teleport from one place to another from anywhere in the world or dimensions.",
+	"authors": [
+		"Shuuphe"
+	],
+	"contact": {
+		"homepage": "https://github.com/al1-gif",
+		"sources": "https://github.com/al1-gif/Meh_Waypoint",
+		"issues": "https://github.com/al1-gif/Meh_Waypoint/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/mehwaypoint/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.shuuphe.mehwaypoint.MehWaypoint"
+		],
+		"fabric-datagen": [
+			"net.shuuphe.mehwaypoint.MehWaypointDataGenerator"
+		],
+		"client": [
+			"net.shuuphe.mehwaypoint.MehWaypointClient"
+		]
+	},
+	"mixins": [
+		"mehwaypoint.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.5",
+		"minecraft": "~1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
