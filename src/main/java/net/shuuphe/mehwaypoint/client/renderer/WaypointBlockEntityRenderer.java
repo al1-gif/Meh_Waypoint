@@ -12,7 +12,7 @@ import net.minecraft.client.render.state.CameraRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
-import net.shuuphe.mehwaypoint.block.entity.WaypointBlockEntity;
+import net.shuuphe.mehwaypoint.entity.WaypointBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 public class WaypointBlockEntityRenderer implements BlockEntityRenderer<WaypointBlockEntity, WaypointBlockEntityRenderState> {

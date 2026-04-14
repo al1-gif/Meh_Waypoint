@@ -4,7 +4,9 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"ExampleMixin",
-		"WaypointReaderMixin"
+		"WaypointReaderMixin",
+		"WaypointSetMixin",
+		"SupportXaeroMinimapMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

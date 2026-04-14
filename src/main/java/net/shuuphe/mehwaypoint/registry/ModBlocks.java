@@ -25,6 +25,7 @@ public class ModBlocks {
                         .registryKey(key)
                         .strength(1.5f)
                         .nonOpaque()
+                        .luminance(state -> 12)
         );
 
         Registry.register(Registries.BLOCK, key, block);

@@ -3,7 +3,7 @@
 	"id": "mehwaypoint",
 	"version": "${version}",
 	"name": "Meh Waypoint",
-	"description": "Cool teleport waypoint that lets you teleport from one place to another from anywhere in the world or dimensions.",
+	"description": "Cool teleport waypoint that lets you teleport from one place to another from anywhere in the world or dimensions. You can teleport only if u have installed Xaero's WorldMap mod",
 	"authors": [
 		"Shuuphe"
 	],

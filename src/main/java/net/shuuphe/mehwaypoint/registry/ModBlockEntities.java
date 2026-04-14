@@ -6,7 +6,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.shuuphe.mehwaypoint.MehWaypoint;
-import net.shuuphe.mehwaypoint.block.entity.WaypointBlockEntity;
+import net.shuuphe.mehwaypoint.entity.WaypointBlockEntity;
 
 public class ModBlockEntities {
 

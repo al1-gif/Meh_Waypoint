@@ -1,4 +1,4 @@
-package net.shuuphe.mehwaypoint.block.entity;
+package net.shuuphe.mehwaypoint.entity;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.block.BlockState;
@@ -10,7 +10,7 @@ import net.shuuphe.mehwaypoint.registry.ModBlockEntities;
 
 public class WaypointBlockEntity extends BlockEntity {
 
-    private String name = "Teleport Waypoint";
+    private String name = "Waypoint";
 
     public WaypointBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WAYPOINT_BLOCK_ENTITY, pos, state);
@@ -27,7 +27,7 @@ public class WaypointBlockEntity extends BlockEntity {
 
     @Override
     protected void readData(ReadView view) {
-        this.name = view.read("name", Codec.STRING).orElse("Teleport Waypoint");
+        this.name = view.read("name", Codec.STRING).orElse("Waypoint");
     }
 
     @Override

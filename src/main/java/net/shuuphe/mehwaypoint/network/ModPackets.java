@@ -7,4 +7,8 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(WaypointAddPayload.ID,    WaypointAddPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(WaypointRemovePayload.ID, WaypointRemovePayload.CODEC);
     }
+
+    public static void registerC2S() {
+        PayloadTypeRegistry.playC2S().register(TeleportRequestPayload.ID, TeleportRequestPayload.CODEC);
+    }
 }

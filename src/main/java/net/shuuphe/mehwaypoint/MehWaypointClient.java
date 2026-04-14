@@ -18,15 +18,13 @@ public class MehWaypointClient implements ClientModInitializer {
     public void onInitializeClient() {
         BlockRenderLayerMap.putBlock(ModBlocks.WAYPOINT_BLOCK, BlockRenderLayer.CUTOUT);
         BlockEntityRendererFactories.register(ModBlockEntities.WAYPOINT_BLOCK_ENTITY, WaypointBlockEntityRenderer::new);
+
         ClientPlayNetworking.registerGlobalReceiver(WaypointAddPayload.ID, (payload, context) ->
-                context.client().execute(() ->
-                        XaeroWaypointManager.addWaypoint(payload.pos(), payload.name())
-                )
+                context.client().execute(() -> XaeroWaypointManager.addWaypoint(payload.pos(), payload.name()))
         );
+
         ClientPlayNetworking.registerGlobalReceiver(WaypointRemovePayload.ID, (payload, context) ->
-                context.client().execute(() ->
-                        XaeroWaypointManager.removeWaypoint(payload.pos())
-                )
+                context.client().execute(() -> XaeroWaypointManager.removeWaypoint(payload.pos()))
         );
     }
 }

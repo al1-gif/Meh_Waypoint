@@ -10,7 +10,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.shuuphe.mehwaypoint.block.entity.WaypointBlockEntity;
+import net.shuuphe.mehwaypoint.data.WaypointSavedData;
+import net.shuuphe.mehwaypoint.entity.WaypointBlockEntity;
 import net.shuuphe.mehwaypoint.network.WaypointAddPayload;
 import net.shuuphe.mehwaypoint.network.WaypointRemovePayload;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +28,6 @@ public class WaypointBlock extends BlockWithEntity {
     protected MapCodec<? extends BlockWithEntity> getCodec() {
         return CODEC;
     }
-
 
     @Override
     protected BlockRenderType getRenderType(BlockState state) {
@@ -48,6 +48,7 @@ public class WaypointBlock extends BlockWithEntity {
         if (world instanceof ServerWorld serverWorld) {
             String name = (world.getBlockEntity(pos) instanceof WaypointBlockEntity be)
                     ? be.getName() : "Waypoint";
+            WaypointSavedData.getOrCreate(serverWorld.getServer()).addPosition(pos);
             WaypointAddPayload payload = new WaypointAddPayload(pos, name);
             for (ServerPlayerEntity player : serverWorld.getPlayers()) {
                 ServerPlayNetworking.send(player, payload);
@@ -58,6 +59,7 @@ public class WaypointBlock extends BlockWithEntity {
     @Override
     protected void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
         if (!state.isOf(world.getBlockState(pos).getBlock())) {
+            WaypointSavedData.getOrCreate(world.getServer()).removePosition(pos);
             WaypointRemovePayload payload = new WaypointRemovePayload(pos);
             for (ServerPlayerEntity player : world.getPlayers()) {
                 ServerPlayNetworking.send(player, payload);
