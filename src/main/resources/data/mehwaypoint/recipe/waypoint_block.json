@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "GIG",
+    "GOG"
+  ],
+  "key": {
+    "G": "minecraft:glass_pane",
+    "O": "minecraft:obsidian",
+    "I": "minecraft:gold_ingot"
+  },
+  "result": {
+    "id": "mehwaypoint:waypoint_block",
+    "count": 2
+  }
+}
