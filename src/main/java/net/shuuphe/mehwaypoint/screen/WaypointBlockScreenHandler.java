@@ -16,60 +16,65 @@ import net.shuuphe.mehwaypoint.registry.ModItems;
 import net.shuuphe.mehwaypoint.registry.ModScreenHandlers;
 
 public class WaypointBlockScreenHandler extends ScreenHandler {
-    private static final int INVENTORY_START = 1;
-    private static final int INVENTORY_END = 28;
-    private static final int HOTBAR_START = 28;
-    private static final int HOTBAR_END = 37;
-
-    public static final Item[][] UPGRADE_ITEMS = {
-            { Items.EMERALD,     Items.REDSTONE,  Items.GOLD_INGOT,  Items.IRON_INGOT  },
-            { Items.EMERALD,     Items.REDSTONE,  Items.GOLD_INGOT,  Items.IRON_INGOT  },
-            { Items.EMERALD,     Items.EMERALD,   Items.GOLD_INGOT,  Items.DIAMOND     },
-            { Items.EMERALD,     Items.REDSTONE,  Items.GOLD_BLOCK,  Items.DIAMOND     },
-            { Items.NETHER_STAR, Items.REDSTONE,  Items.GOLD_BLOCK,  Items.IRON_BLOCK  },
-    };
 
     private final SimpleInventory ingredientInv = new SimpleInventory(1);
     private final ScreenHandlerContext context;
-    private final PropertyDelegate levelDelegate;
+    private final PropertyDelegate properties;
     private final BlockPos blockPos;
-
     public WaypointBlockScreenHandler(int syncId, PlayerInventory playerInv, BlockPos pos) {
-        this(syncId, playerInv, ScreenHandlerContext.EMPTY, pos, new ArrayPropertyDelegate(1));
+        this(syncId, playerInv, ScreenHandlerContext.EMPTY, pos, new ArrayPropertyDelegate(2));
     }
-
     public WaypointBlockScreenHandler(int syncId, PlayerInventory playerInv,
                                       ScreenHandlerContext ctx, BlockPos pos, PropertyDelegate delegate) {
         super(ModScreenHandlers.WAYPOINT_BLOCK, syncId);
-        this.context = ctx;
-        this.blockPos = pos;
-        this.levelDelegate = delegate;
-        addProperties(levelDelegate);
+        this.context    = ctx;
+        this.blockPos   = pos;
+        this.properties = delegate;
+        addProperties(properties);
 
         this.addSlot(new Slot(ingredientInv, 0, 136, 110));
 
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
                 addSlot(new Slot(playerInv, col + row * 9 + 9, 36 + col * 18, 137 + row * 18));
-
         for (int col = 0; col < 9; col++)
             addSlot(new Slot(playerInv, col, 36 + col * 18, 195));
     }
 
     public SimpleInventory getIngredientInv() { return ingredientInv; }
     public BlockPos getBlockPos() { return blockPos; }
-    public int getWaypointLevel() { return levelDelegate.get(0); }
+    public int getWaypointLevel() { return properties.get(0); }
+    public boolean isEffectsActive() { return properties.get(1) != 0; }
 
+    public static int getRequiredRubyCount(int currentLevel) {
+        return switch (currentLevel) {
+            case 1 -> 8;
+            case 2 -> 16;
+            case 3 -> 20;
+            case 4 -> 26;
+            case 5 -> 34;
+            default -> Integer.MAX_VALUE;
+        };
+    }
     public boolean canUpgrade() {
-        int level = levelDelegate.get(0);
-        if (level >= 5) return false;
+        int level = properties.get(0);
+        if (level >= 6) return false;
+        ItemStack stack = ingredientInv.getStack(0);
+        return !stack.isEmpty()
+                && stack.getItem() == ModItems.RUBY
+                && stack.getCount() >= getRequiredRubyCount(level);
+    }
+    public boolean canActivate() {
+        ItemStack stack = ingredientInv.getStack(0);
+        if (stack.isEmpty()) return false;
+        Item item = stack.getItem();
+        return item == Items.IRON_INGOT
+                || item == Items.GOLD_INGOT
+                || item == Items.EMERALD;
+    }
 
-        ItemStack payment = ingredientInv.getStack(0);
-        if (payment.isEmpty()) return false;
-
-        Item item = payment.getItem();
-        return item == Items.EMERALD || item == ModItems.RUBY ||
-                item == Items.GOLD_INGOT || item == Items.IRON_INGOT;
+    public boolean canConfirm() {
+        return canUpgrade() || canActivate();
     }
 
     @Override
@@ -81,10 +86,10 @@ public class WaypointBlockScreenHandler extends ScreenHandler {
         ItemStack stack = slot.getStack();
         result = stack.copy();
 
-        if (index < 4) {
-            if (!insertItem(stack, 4, slots.size(), true)) return ItemStack.EMPTY;
+        if (index == 0) {
+            if (!insertItem(stack, 1, slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            if (!insertItem(stack, 0, 4, false)) return ItemStack.EMPTY;
+            if (!insertItem(stack, 0, 1, false)) return ItemStack.EMPTY;
         }
 
         if (stack.isEmpty()) slot.setStack(ItemStack.EMPTY);
@@ -98,8 +103,7 @@ public class WaypointBlockScreenHandler extends ScreenHandler {
     @Override
     public void onClosed(PlayerEntity player) {
         super.onClosed(player);
-        context.run((world, pos) -> {
-            player.getInventory().offerOrDrop(ingredientInv.removeStack(0));
-        });
+        context.run((world, pos) ->
+                player.getInventory().offerOrDrop(ingredientInv.removeStack(0)));
     }
 }

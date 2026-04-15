@@ -9,7 +9,14 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "mehwaypoint:waypoint_block"
+          "name": "mehwaypoint:waypoint_block",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity",
+              "include": ["minecraft:block_entity_data"]
+            }
+          ]
         }
       ],
       "rolls": 1.0

@@ -1,5 +1,12 @@
 {
   "block.mehwaypoint.waypoint_block": "Teleport Waypoint",
   "item.mehwaypoint.waypoint_block": "Teleport Waypoint",
-  "item.mehwaypoint.ruby": "Ruby"
+  "item.mehwaypoint.ruby": "Ruby",
+  "container.mehwaypoint.waypoint_powers": "Waypoint Powers",
+  "mehwaypoint.screen.level": "Level",
+  "mehwaypoint.screen.active": "ACTIVE",
+  "mehwaypoint.screen.inactive": "INACTIVE",
+  "mehwaypoint.screen.upgrade": "Upgrade with Ruby",
+  "mehwaypoint.screen.activate": "Activate with Ingot/Emerald",
+  "mehwaypoint.screen.max_level": "MAX LEVEL"
 }

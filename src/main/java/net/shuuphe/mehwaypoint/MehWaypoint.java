@@ -3,6 +3,8 @@ package net.shuuphe.mehwaypoint;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -43,14 +45,14 @@ public class MehWaypoint implements ModInitializer {
 			ServerWorld world = player.getEntityWorld();
 			if (!(world.getBlockEntity(pos) instanceof WaypointBlockEntity)) return;
 			context.server().execute(() ->
-					player.teleportTo(new TeleportTarget(
-							world,
-							new Vec3d(pos.getX() + 1.5, pos.getY(), pos.getZ() + 0.5),
-							Vec3d.ZERO,
-							player.getYaw(),
-							player.getPitch(),
-							TeleportTarget.NO_OP
-					))
+				player.teleportTo(new TeleportTarget(
+						world,
+						new Vec3d(pos.getX() + 1.5, pos.getY(), pos.getZ() + 0.5),
+						Vec3d.ZERO,
+						player.getYaw(),
+						player.getPitch(),
+						TeleportTarget.NO_OP
+				))
 			);
 		});
 
@@ -63,13 +65,27 @@ public class MehWaypoint implements ModInitializer {
 				ServerWorld world = player.getEntityWorld();
 				if (!(world.getBlockEntity(pos) instanceof WaypointBlockEntity be)) return;
 
-				int level = be.getLevel();
-				if (level < 5 && handler.canUpgrade()) {
+				if (handler.canUpgrade()) {
+					int level = be.getLevel();
+					if (level < 6) {
+						int cost = WaypointBlockScreenHandler.getRequiredRubyCount(level);
+						handler.getIngredientInv().getStack(0).decrement(cost);
+						be.setLevel(level + 1);
+						LOGGER.info("[MehWaypoint] {} upgraded waypoint at {} to level {}",
+								player.getName().getString(), pos, level + 1);
+					}
+				} else if (handler.canActivate()) {
+					Item ingredient = handler.getIngredientInv().getStack(0).getItem();
 					handler.getIngredientInv().getStack(0).decrement(1);
-
-					be.setLevel(level + 1);
-					player.closeHandledScreen();
+					be.setEffectsActive(true);
+					LOGGER.info("[MehWaypoint] {} activated waypoint at {} using {}",
+							player.getName().getString(), pos,
+							ingredient == Items.IRON_INGOT ? "Iron Ingot"
+							: ingredient == Items.GOLD_INGOT ? "Gold Ingot"
+							: "Emerald");
 				}
+
+				player.closeHandledScreen();
 			});
 		});
 

@@ -13,7 +13,7 @@ import java.util.*;
 public class XaeroWaypointManager {
 
     private static final int BLUE = 6;
-    static final String OUR_SYMBOL = "Waypoint";
+    static final String OUR_SYMBOL = "W";
 
     private static final Map<BlockPos, Waypoint> tracked = new HashMap<>();
     private static final Set<BlockPos> trackedPositions = new HashSet<>();
@@ -21,6 +21,8 @@ public class XaeroWaypointManager {
     private static final Map<BlockPos, String> pendingAdds = new LinkedHashMap<>();
     private static final Set<BlockPos> pendingRemoves = new HashSet<>();
     private static Set<BlockPos> pendingSyncValid = null;
+    private static boolean needsRefresh = false;
+
     public static void tick() {
         if (!SupportMods.minimap()) return;
         MinimapWorld world;
@@ -28,6 +30,7 @@ public class XaeroWaypointManager {
             world = SupportMods.xaeroMinimap.getWaypointWorld();
         } catch (Exception e) { return; }
         if (world == null) return;
+
         if (!pendingAdds.isEmpty()) {
             Map<BlockPos, String> copy = new LinkedHashMap<>(pendingAdds);
             pendingAdds.clear();
@@ -47,6 +50,20 @@ public class XaeroWaypointManager {
             pendingSyncValid = null;
             cleanupOrphans(world, validSet);
         }
+
+        if (needsRefresh) {
+            try {
+                SupportMods.xaeroMinimap.requestWaypointsRefresh();
+                needsRefresh = false;
+            } catch (Exception ignored) {
+            }
+            try {
+                MinimapSession session = (MinimapSession) BuiltInHudModules.MINIMAP.getCurrentSession();
+                if (session != null) {
+                    session.getWorldManagerIO().saveWorld(world);
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     public static void queueAdd(BlockPos pos, String name) {
@@ -64,6 +81,16 @@ public class XaeroWaypointManager {
         for (long l : validLongs) validSet.add(BlockPos.fromLong(l));
         pendingSyncValid = validSet;
     }
+
+    public static void clearState() {
+        tracked.clear();
+        trackedPositions.clear();
+        pendingAdds.clear();
+        pendingRemoves.clear();
+        pendingSyncValid = null;
+        needsRefresh = false;
+    }
+
     private static void cleanupOrphans(MinimapWorld world, Set<BlockPos> validSet) {
         if (!SupportMods.minimap()) return;
         try {
@@ -82,12 +109,7 @@ public class XaeroWaypointManager {
                 for (Waypoint w : toRemove) set.remove(w);
             }
             allowRemoval = false;
-
-            MinimapSession session = (MinimapSession) BuiltInHudModules.MINIMAP.getCurrentSession();
-            if (session != null) {
-                session.getWorldManagerIO().saveWorld(world);
-                SupportMods.xaeroMinimap.requestWaypointsRefresh();
-            }
+            needsRefresh = true;
         } catch (Exception e) {
             allowRemoval = false;
         }
@@ -111,7 +133,7 @@ public class XaeroWaypointManager {
                             && OUR_SYMBOL.equals(candidate.getSymbol())) {
                         tracked.put(pos.toImmutable(), candidate);
                         trackedPositions.add(pos.toImmutable());
-                        SupportMods.xaeroMinimap.requestWaypointsRefresh();
+                        needsRefresh = true;
                         return;
                     }
                 }
@@ -127,12 +149,7 @@ public class XaeroWaypointManager {
             set.add(wp);
             tracked.put(pos.toImmutable(), wp);
             trackedPositions.add(pos.toImmutable());
-
-            MinimapSession session = (MinimapSession) BuiltInHudModules.MINIMAP.getCurrentSession();
-            if (session != null) {
-                session.getWorldManagerIO().saveWorld(world);
-                SupportMods.xaeroMinimap.requestWaypointsRefresh();
-            }
+            needsRefresh = true;
         } catch (Exception e) {}
     }
 
@@ -166,12 +183,7 @@ public class XaeroWaypointManager {
                 }
             }
             allowRemoval = false;
-
-            MinimapSession session = (MinimapSession) BuiltInHudModules.MINIMAP.getCurrentSession();
-            if (session != null) {
-                session.getWorldManagerIO().saveWorld(world);
-                SupportMods.xaeroMinimap.requestWaypointsRefresh();
-            }
+            needsRefresh = true;
         } catch (Exception e) {
             allowRemoval = false;
         }
@@ -187,13 +199,7 @@ public class XaeroWaypointManager {
         }
         return null;
     }
-    public static void clearState() {
-        tracked.clear();
-        trackedPositions.clear();
-        pendingAdds.clear();
-        pendingRemoves.clear();
-        pendingSyncValid = null;
-    }
+
     public static boolean isMehWaypoint(Object original) {
         if (tracked.containsValue(original)) return true;
         if (original instanceof Waypoint wp) {

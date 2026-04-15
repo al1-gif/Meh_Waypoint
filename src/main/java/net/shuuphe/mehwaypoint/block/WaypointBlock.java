@@ -5,6 +5,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -22,7 +24,12 @@ import net.shuuphe.mehwaypoint.data.WaypointSavedData;
 import net.shuuphe.mehwaypoint.entity.WaypointBlockEntity;
 import net.shuuphe.mehwaypoint.network.WaypointAddPayload;
 import net.shuuphe.mehwaypoint.network.WaypointRemovePayload;
+import net.shuuphe.mehwaypoint.registry.ModBlockEntities;
 import net.shuuphe.mehwaypoint.screen.WaypointBlockScreenHandler;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
 import org.jetbrains.annotations.Nullable;
 
 public class WaypointBlock extends BlockWithEntity {
@@ -49,10 +56,24 @@ public class WaypointBlock extends BlockWithEntity {
         return new WaypointBlockEntity(pos, state);
     }
 
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        return validateTicker(type, ModBlockEntities.WAYPOINT_BLOCK_ENTITY, WaypointBlockEntity::tick);
+    }
+
     @Override
     public void onPlaced(World world, BlockPos pos, BlockState state,
                          @Nullable LivingEntity placer, ItemStack itemStack) {
         super.onPlaced(world, pos, state, placer, itemStack);
+
+        NbtComponent customData = itemStack.get(DataComponentTypes.CUSTOM_DATA);
+        if (customData != null && world.getBlockEntity(pos) instanceof WaypointBlockEntity be) {
+            NbtCompound nbt = customData.copyNbt();
+            if (nbt.contains("level")) {
+                be.setLevel(nbt.getInt("level").get());
+            }
+        }
 
         if (world instanceof ServerWorld serverWorld) {
             String name = (world.getBlockEntity(pos) instanceof WaypointBlockEntity be)
@@ -64,6 +85,22 @@ public class WaypointBlock extends BlockWithEntity {
             }
         }
     }
+    @Override
+    public void afterBreak(World world, PlayerEntity player, BlockPos pos, BlockState state,
+                           @Nullable BlockEntity blockEntity, ItemStack tool) {
+        player.incrementStat(net.minecraft.stat.Stats.MINED.getOrCreateStat(this));
+        player.addExhaustion(0.005F);
+
+        if (!player.isCreative()) {
+            ItemStack drop = new ItemStack(this.asItem());
+            if (blockEntity instanceof WaypointBlockEntity be && be.getLevel() > 1) {
+                NbtCompound nbt = new NbtCompound();
+                nbt.putInt("level", be.getLevel());
+                drop.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+            }
+            dropStack(world, pos, drop);
+        }
+    }
 
     @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos,
@@ -72,8 +109,9 @@ public class WaypointBlock extends BlockWithEntity {
             if (!(world.getBlockEntity(pos) instanceof WaypointBlockEntity be)) return ActionResult.PASS;
             if (!(player instanceof ServerPlayerEntity serverPlayer)) return ActionResult.PASS;
 
-            ArrayPropertyDelegate delegate = new ArrayPropertyDelegate(1);
+            ArrayPropertyDelegate delegate = new ArrayPropertyDelegate(2);
             delegate.set(0, be.getLevel());
+            delegate.set(1, be.isEffectsActive() ? 1 : 0);
 
             serverPlayer.openHandledScreen(new ExtendedScreenHandlerFactory<BlockPos>() {
                 @Override
