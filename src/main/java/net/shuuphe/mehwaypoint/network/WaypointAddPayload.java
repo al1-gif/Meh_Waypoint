@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.shuuphe.mehwaypoint.MehWaypoint;
 
-public record WaypointAddPayload(BlockPos pos, String name) implements CustomPayload {
+public record WaypointAddPayload(BlockPos pos, String name, String dimension) implements CustomPayload {
     public static final CustomPayload.Id<WaypointAddPayload> ID =
             new CustomPayload.Id<>(Identifier.of(MehWaypoint.MOD_ID, "waypoint_add"));
 
@@ -16,6 +16,7 @@ public record WaypointAddPayload(BlockPos pos, String name) implements CustomPay
             PacketCodec.tuple(
                     BlockPos.PACKET_CODEC, WaypointAddPayload::pos,
                     PacketCodecs.STRING,   WaypointAddPayload::name,
+                    PacketCodecs.STRING,   WaypointAddPayload::dimension,
                     WaypointAddPayload::new
             );
 

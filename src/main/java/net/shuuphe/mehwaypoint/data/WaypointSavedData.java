@@ -1,28 +1,48 @@
 package net.shuuphe.mehwaypoint.data;
 
+import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.datafixer.DataFixTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.PersistentStateType;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class WaypointSavedData extends PersistentState {
 
-    private final Set<BlockPos> positions = new HashSet<>();
+    private final Map<BlockPos, String> positionDimensions = new HashMap<>();
+    private record Entry(long posLong, String dimension) {}
+    private static final Codec<Entry> ENTRY_CODEC = RecordCodecBuilder.create(inst -> inst.group(
+            Codec.LONG.fieldOf("pos").forGetter(Entry::posLong),
+            Codec.STRING.fieldOf("dim").forGetter(Entry::dimension)
+    ).apply(inst, Entry::new));
 
-    private static final Codec<WaypointSavedData> CODEC = Codec.LONG.listOf().xmap(
-            longs -> {
-                WaypointSavedData data = new WaypointSavedData();
-                longs.forEach(l -> data.positions.add(BlockPos.fromLong(l)));
-                return data;
-            },
-            data -> data.positions.stream().map(BlockPos::asLong).toList()
-    );
+    private static final Codec<WaypointSavedData> CODEC =
+            Codec.either(ENTRY_CODEC.listOf(), Codec.LONG.listOf())
+                    .xmap(
+                            either -> either.map(
+                                    entries -> {
+                                        WaypointSavedData d = new WaypointSavedData();
+                                        entries.forEach(e -> d.positionDimensions.put(
+                                                BlockPos.fromLong(e.posLong()), e.dimension()));
+                                        return d;
+                                    },
+                                    longs -> {
+                                        WaypointSavedData d = new WaypointSavedData();
+                                        longs.forEach(l -> d.positionDimensions.put(
+                                                BlockPos.fromLong(l), "minecraft:overworld"));
+                                        return d;
+                                    }
+                            ),
+                            data -> Either.left(
+                                    data.positionDimensions.entrySet().stream()
+                                            .map(e -> new Entry(e.getKey().asLong(), e.getValue()))
+                                            .toList()
+                            )
+                    );
 
     public static final PersistentStateType<WaypointSavedData> TYPE = new PersistentStateType<>(
             "mehwaypoint",
@@ -34,18 +54,22 @@ public class WaypointSavedData extends PersistentState {
     public static WaypointSavedData getOrCreate(MinecraftServer server) {
         return server.getOverworld().getPersistentStateManager().getOrCreate(TYPE);
     }
-
-    public void addPosition(BlockPos pos) {
-        positions.add(pos.toImmutable());
+    public void addPosition(BlockPos pos, String dimension) {
+        positionDimensions.put(pos.toImmutable(), dimension);
         markDirty();
     }
 
     public void removePosition(BlockPos pos) {
-        positions.remove(pos);
+        positionDimensions.remove(pos);
         markDirty();
     }
-
     public Set<BlockPos> getPositions() {
-        return Collections.unmodifiableSet(positions);
+        return Collections.unmodifiableSet(positionDimensions.keySet());
+    }
+    public String getDimension(BlockPos pos) {
+        return positionDimensions.getOrDefault(pos, "minecraft:overworld");
+    }
+    public Map<BlockPos, String> getPositionDimensions() {
+        return Collections.unmodifiableMap(positionDimensions);
     }
 }

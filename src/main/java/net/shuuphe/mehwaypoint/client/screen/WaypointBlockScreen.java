@@ -93,7 +93,7 @@ public class WaypointBlockScreen extends HandledScreen<WaypointBlockScreenHandle
             int cost = WaypointBlockScreenHandler.getRequiredRubyCount(level);
             context.drawText(this.textRenderer, Text.literal("Next Lv-" + (level + 1) + ": " + cost + " Rubies").formatted(Formatting.LIGHT_PURPLE), 120, 9, 0xFFFFFFFF, false);
         } else {
-            context.drawText(this.textRenderer, Text.literal("★ MAX LEVEL ★").formatted(Formatting.GOLD, Formatting.BOLD), 120, 9, 0xFFFFFFFF, false);
+            context.drawText(this.textRenderer, Text.literal("MAX LEVEL <3").formatted(Formatting.GOLD, Formatting.BOLD), 120, 9, 0xFFFFFFFF, false);
         }
     }
 

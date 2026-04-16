@@ -25,12 +25,10 @@ public class WaypointReaderMixin {
     private void onGetRightClickOptions(Waypoint element, IRightClickableElement target,
                                         CallbackInfoReturnable<ArrayList<RightClickOption>> cir) {
         if (!XaeroWaypointManager.isMehWaypoint(element.getOriginal())) return;
-
         BlockPos pos = XaeroWaypointManager.getPosFor(element.getOriginal());
         if (pos == null) return;
-
+        String dimension = XaeroWaypointManager.getDimensionFor(pos);
         ArrayList<RightClickOption> options = new ArrayList<>();
-
         options.add(new RightClickOption(element.getName(), options.size(), target) {
             @Override public void onAction(Screen screen) {}
         });
@@ -38,7 +36,7 @@ public class WaypointReaderMixin {
         options.add(new RightClickOption("Confirm Teleport", options.size(), target) {
             @Override
             public void onAction(Screen screen) {
-                ClientPlayNetworking.send(new TeleportRequestPayload(pos));
+                ClientPlayNetworking.send(new TeleportRequestPayload(pos, dimension));
                 screen.close();
             }
         });

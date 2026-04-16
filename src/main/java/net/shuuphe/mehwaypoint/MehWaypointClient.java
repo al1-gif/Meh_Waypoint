@@ -31,7 +31,8 @@ public class MehWaypointClient implements ClientModInitializer {
                 XaeroWaypointManager.clearState()
         );
         ClientPlayNetworking.registerGlobalReceiver(WaypointAddPayload.ID, (payload, context) ->
-                context.client().execute(() -> XaeroWaypointManager.queueAdd(payload.pos(), payload.name()))
+                context.client().execute(() ->
+                        XaeroWaypointManager.queueAdd(payload.pos(), payload.name(), payload.dimension()))
         );
         ClientPlayNetworking.registerGlobalReceiver(WaypointRemovePayload.ID, (payload, context) ->
                 context.client().execute(() -> XaeroWaypointManager.queueRemove(payload.pos()))

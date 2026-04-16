@@ -78,13 +78,15 @@ public class WaypointBlock extends BlockWithEntity {
         if (world instanceof ServerWorld serverWorld) {
             String name = (world.getBlockEntity(pos) instanceof WaypointBlockEntity be)
                     ? be.getName() : "Waypoint";
-            WaypointSavedData.getOrCreate(serverWorld.getServer()).addPosition(pos);
-            WaypointAddPayload payload = new WaypointAddPayload(pos, name);
+            String dim = serverWorld.getRegistryKey().getValue().toString();
+            WaypointSavedData.getOrCreate(serverWorld.getServer()).addPosition(pos, dim);
+            WaypointAddPayload payload = new WaypointAddPayload(pos, name, dim);
             for (ServerPlayerEntity player : serverWorld.getPlayers()) {
                 ServerPlayNetworking.send(player, payload);
             }
         }
     }
+
     @Override
     public void afterBreak(World world, PlayerEntity player, BlockPos pos, BlockState state,
                            @Nullable BlockEntity blockEntity, ItemStack tool) {

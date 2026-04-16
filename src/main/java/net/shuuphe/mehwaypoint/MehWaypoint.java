@@ -5,11 +5,15 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.TeleportTarget;
+import net.minecraft.world.World;
 import net.shuuphe.mehwaypoint.data.WaypointSavedData;
 import net.shuuphe.mehwaypoint.entity.WaypointBlockEntity;
 import net.shuuphe.mehwaypoint.network.*;
@@ -22,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class MehWaypoint implements ModInitializer {
 
@@ -42,17 +47,24 @@ public class MehWaypoint implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(TeleportRequestPayload.ID, (payload, context) -> {
 			ServerPlayerEntity player = context.player();
 			BlockPos pos = payload.pos();
-			ServerWorld world = player.getEntityWorld();
-			if (!(world.getBlockEntity(pos) instanceof WaypointBlockEntity)) return;
+			String dimString = payload.dimension();
+			RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(dimString));
+			ServerWorld targetWorld = context.server().getWorld(dimKey);
+			if (targetWorld == null) {
+				LOGGER.warn("[MehWaypoint] Unknown dimension '{}' in teleport request", dimString);
+				return;
+			}
+			if (!(targetWorld.getBlockEntity(pos) instanceof WaypointBlockEntity)) return;
+
 			context.server().execute(() ->
-				player.teleportTo(new TeleportTarget(
-						world,
-						new Vec3d(pos.getX() + 1.5, pos.getY(), pos.getZ() + 0.5),
-						Vec3d.ZERO,
-						player.getYaw(),
-						player.getPitch(),
-						TeleportTarget.NO_OP
-				))
+					player.teleportTo(new TeleportTarget(
+							targetWorld,
+							new Vec3d(pos.getX() + 1.5, pos.getY(), pos.getZ() + 0.5),
+							Vec3d.ZERO,
+							player.getYaw(),
+							player.getPitch(),
+							TeleportTarget.NO_OP
+					))
 			);
 		});
 
@@ -81,8 +93,8 @@ public class MehWaypoint implements ModInitializer {
 					LOGGER.info("[MehWaypoint] {} activated waypoint at {} using {}",
 							player.getName().getString(), pos,
 							ingredient == Items.IRON_INGOT ? "Iron Ingot"
-							: ingredient == Items.GOLD_INGOT ? "Gold Ingot"
-							: "Emerald");
+									: ingredient == Items.GOLD_INGOT ? "Gold Ingot"
+									  : "Emerald");
 				}
 
 				player.closeHandledScreen();
@@ -91,14 +103,18 @@ public class MehWaypoint implements ModInitializer {
 
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.player;
-			ServerWorld world = player.getEntityWorld();
 			WaypointSavedData data = WaypointSavedData.getOrCreate(server);
+			for (Map.Entry<BlockPos, String> entry : data.getPositionDimensions().entrySet()) {
+				BlockPos pos = entry.getKey();
+				String dim = entry.getValue();
 
-			for (BlockPos pos : data.getPositions()) {
 				String name = "Waypoint";
-				if (world.getBlockEntity(pos) instanceof WaypointBlockEntity be)
+				RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(dim));
+				ServerWorld dimWorld = server.getWorld(dimKey);
+				if (dimWorld != null && dimWorld.getBlockEntity(pos) instanceof WaypointBlockEntity be)
 					name = be.getName();
-				ServerPlayNetworking.send(player, new WaypointAddPayload(pos, name));
+
+				ServerPlayNetworking.send(player, new WaypointAddPayload(pos, name, dim));
 			}
 
 			List<Long> validLongs = data.getPositions().stream()
